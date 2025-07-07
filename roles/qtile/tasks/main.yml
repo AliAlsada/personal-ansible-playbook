@@ -36,7 +36,6 @@
   loop:
     - "{{ qtile_config_directory }}"
     - "{{ qtile_config_directory }}/scripts"
-    - "{{ picom_config_directory }}"
     
 - name: Qtile - Copy qtile scripts
   template:
@@ -63,9 +62,4 @@
   loop:
     - colors.py
     - config.py
-
-- name: Qtile - Copy pciom configuration file
-  template:
-    src: config.py.j2
-    dest: "{{ picom_config_directory }}/picom.conf"
-    mode: '0644'
+    

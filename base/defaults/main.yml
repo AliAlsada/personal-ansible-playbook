@@ -1,4 +1,7 @@
 ---
+config_directory: /home/{{ username }}/.config
+picom_config_directory: "{{ config_directory }}/picom"
+
 essential_packages_apt:
   - git
   - btop
@@ -9,7 +12,7 @@ essential_packages_apt:
   - network-manager
   - pavucontrol
   - pulseaudio
-  - pamixer #sound
+  - pamixer # sound
   - ansible
   - dmenu
   - rofi # apps manager
@@ -23,7 +26,6 @@ essential_packages_apt:
   - virtualbox
   - pipx
   - picom
-  # - deborphan
   - redshift
 
 essential_packages_pipx:
@@ -32,3 +34,9 @@ essential_packages_pipx:
 fonts:
   - name: nerd-fonts
     url: https://github.com/ryanoasis/nerd-fonts/releases
+
+picom_opacity_rule:
+  kitty: 95
+  nvim: 95
+  Code: 95
+  firefox: 100

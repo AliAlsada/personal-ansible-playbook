@@ -1,7 +1,7 @@
 # Specify the backend to use: `xrender`, `glx`, or `egl`.
 #
 # Default: "xrender"
-backend = "xrender"
+backend = "glx"
 
 # Enabled client-side shadows on windows. Note desktop windows
 # (windows with '_NET_WM_WINDOW_TYPE_DESKTOP') never get shadow, 
@@ -100,10 +100,12 @@ focus-exclude = [
 ];
 
 opacity-rule = [
+  "95:class_g    = 'kitty'",
+  "95:class_g    = 'nvim'",
+  "95:class_g    = 'Code'",
   "100:class_g    = 'XTerm'",
   "100:class_g    = 'URxvt'",
-  "100:class_g    = 'firefox'",
-  "100:class_g    = 'Thunderbird'"
+  "100:class_g    = 'firefox'"
 ];
 
 wintypes:
@@ -115,3 +117,4 @@ wintypes:
   popup_menu = { opacity = 1.0; }
   dropdown_menu = { opacity = 1.0; }
 };
+

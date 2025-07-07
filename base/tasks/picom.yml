@@ -1,0 +1,17 @@
+- name: Picom - Create configuration directory exists
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ username }}"
+    group: "{{ group }}"
+    mode: '0755'
+  loop:
+    - "{{ picom_config_directory }}"
+
+- name: Picom - Copy configuration file
+  template:
+    src: picom.conf.j2
+    dest: "{{ picom_config_directory }}/picom.conf"
+    owner: "{{ username }}"
+    group: "{{ group }}"
+    mode: '0644'
