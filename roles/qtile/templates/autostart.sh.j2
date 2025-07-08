@@ -1,6 +1,26 @@
 # ----------------------------------------------
 # Pywal
 # --------------------------------------------
+# screen
+xrandr --output HDMI-0 --mode 2560x1440 --pos 0x0 --rotate normal --output DP-0 --off --output DP-1 --off --output HDMI-1 --off --output DP-2 --off --output DP-3 --off --output DP-4 --primary --mode 2560x1440 --rate 239.97 --pos 2560x0 --rotate normal --output DP-5 --off
+
+# Wait a moment for displays to settle
+sleep 1
 
 ~/.config/qtile/scripts/wallpaper.sh init
-picom --config ~/.config/picom/picom.conf 2>/dev/null &
+picom --config /home/alialsada/.config/picom/picom.conf 2>/dev/null &
+
+{# xrandr
+{% for monitor in monitors %}
+--output {{ monitor.output }}
+--mode {{ monitor.resolution }}
+--rate {{ monitor.refresh_rate }}
+--pos {{ monitor.position }}
+--rotate normal
+{% if monitor.primary %}--primary{% endif %}
+{% endfor %}
+{% for output in all_outputs %}
+{% if output not in (monitors | map(attribute='output') | list) %}
+--output {{ output }} --off
+{% endif %}
+{% endfor %} #}

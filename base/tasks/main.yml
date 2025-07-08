@@ -4,12 +4,14 @@
     name: "{{ essential_packages_apt }}"
     state: present
     update_cache: yes
+  tags: base
 
 - name: Base - Install pipx packages
   community.general.pipx:
     name: "{{ item }}"
     state: present
   loop: "{{ essential_packages_pipx }}"
+  tags: base
 
 - name: Base - Copy wallpapers
   copy:
@@ -18,3 +20,4 @@
     owner: "{{ username }}"
     group: "{{ group }}"
     mode: "0644"
+  tags: base

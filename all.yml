@@ -6,6 +6,7 @@
   roles:
     - base
     - docker
+  tags: base
 
 - name: Qtile
   hosts: all

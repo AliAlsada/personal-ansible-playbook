@@ -16,6 +16,8 @@ show_bluetooth = False
 mod = "mod4"  # Super key
 keys = [
 
+    Key([mod, "shift"], "a", lazy.window.toscreen(0)),  # Move to first screen
+    Key([mod, "shift"], "s", lazy.window.toscreen(1)),  # Move to second screen
     Key([mod], "a", lazy.next_screen()),
     Key([mod], "s", lazy.prev_screen()),
 
