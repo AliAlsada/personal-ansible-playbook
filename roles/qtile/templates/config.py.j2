@@ -16,12 +16,17 @@ show_bluetooth = False
 mod = "mod4"  # Super key
 keys = [
 
+    # Lock Screen
+    Key([mod, "control"], "x", lazy.spawn(home + "/.config/qtile/scripts/lockscreen.sh")),
+    
+    # Multi Screens
     Key([mod, "shift"], "a", lazy.window.toscreen(0)),  # Move to first screen
     Key([mod, "shift"], "s", lazy.window.toscreen(1)),  # Move to second screen
     Key([mod], "a", lazy.next_screen()),
     Key([mod], "s", lazy.prev_screen()),
 
-    Key([mod], "space", lazy.next_layout()),  # Cycle through layouts
+    # Move between layouts
+    Key([mod], "space", lazy.next_layout()),
     Key([mod], "q", lazy.window.kill()),
     Key([mod], "j", lazy.layout.down()),
     Key([mod], "k", lazy.layout.up()),

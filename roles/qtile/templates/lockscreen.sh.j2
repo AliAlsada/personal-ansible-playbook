@@ -1,0 +1,15 @@
+#!/bin/bash
+
+img="/tmp/lock.png"
+
+# Take screenshot
+scrot "$img"
+
+# Blur the image
+convert "$img" -blur 0x15 "$img"
+
+# Lock screen
+i3lock -i "$img"
+
+# Clean up after unlock
+rm -f "$img"

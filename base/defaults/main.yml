@@ -27,6 +27,8 @@ essential_packages_apt:
   - pipx
   - picom
   - redshift
+  - i3lock
+  - scrot
 
 essential_packages_pipx: []
 

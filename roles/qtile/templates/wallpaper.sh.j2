@@ -1,28 +1,195 @@
 #!/bin/bash
-# Wallpaper switcher with Rofi selection + random option
-
+# Multi-monitor wallpaper switcher with Rofi selection + random option
+# Requires nitrogen for proper multi-monitor support
 wallpaper_folder="$HOME/wallpapers"
 
-case "$1" in
-    "select")
-        # Rofi selection mode
-        selected=$(find "$wallpaper_folder" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) -exec basename {} \; | sort | while read rfile
-        do
-            echo -en "$rfile\x00icon\x1f$wallpaper_folder/${rfile}\n"
-        done | rofi -dmenu -replace -l 6 -config ~/.config/rofi/config-wallpaper.rasi)
+# Check if nitrogen is installed
+if ! command -v nitrogen &>/dev/null; then
+  echo "Error: nitrogen is required for multi-monitor support"
+  echo "Install it with: sudo apt install nitrogen (Ubuntu/Debian) or sudo pacman -S nitrogen (Arch)"
+  exit 1
+fi
 
-        [ -z "$selected" ] && exit
-        feh --bg-scale "$wallpaper_folder/$selected"
-        ;;
-    
-    "")
-        # Random wallpaper mode
-        random_wallpaper=$(find "$wallpaper_folder" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | shuf -n 1)
-        feh --bg-scale "$random_wallpaper"
-        ;;
-        
-    *)
-        echo "Usage: $0 [select|random]"
-        exit 1
-        ;;
+# Get list of connected monitors
+get_monitors() {
+  xrandr --query | grep " connected" | cut -d" " -f1
+}
+
+# Set wallpaper for specific monitor using nitrogen
+set_wallpaper_monitor() {
+  local monitor="$1"
+  local wallpaper="$2"
+
+  # Get monitor index (nitrogen uses 0-based indexing)
+  local monitors=($(get_monitors))
+  local monitor_index=-1
+
+  for i in "${!monitors[@]}"; do
+    if [ "${monitors[$i]}" = "$monitor" ]; then
+      monitor_index=$i
+      break
+    fi
+  done
+
+  if [ $monitor_index -eq -1 ]; then
+    echo "Monitor $monitor not found or not connected"
+    exit 1
+  fi
+
+  # Set wallpaper for specific monitor
+  nitrogen --head=$monitor_index --set-scaled "$wallpaper"
+}
+
+# Set wallpaper for all monitors (same image)
+set_wallpaper_all() {
+  local wallpaper="$1"
+  nitrogen --set-scaled "$wallpaper"
+}
+
+# Set different wallpapers for each monitor
+set_wallpaper_each() {
+  local monitors=($(get_monitors))
+
+  for i in "${!monitors[@]}"; do
+    local random_wallpaper=$(find "$wallpaper_folder" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | shuf -n 1)
+    nitrogen --head=$i --set-scaled "$random_wallpaper"
+  done
+}
+
+# Alternative function using feh (if you prefer to stick with feh)
+set_wallpaper_monitor_feh() {
+  local monitor="$1"
+  local wallpaper="$2"
+
+  # Get current wallpapers for all monitors to preserve them
+  local monitors=($(get_monitors))
+  local wallpapers=()
+  local target_index=-1
+
+  # Find the index of our target monitor
+  for i in "${!monitors[@]}"; do
+    if [ "${monitors[$i]}" = "$monitor" ]; then
+      target_index=$i
+      break
+    fi
+  done
+
+  if [ $target_index -eq -1 ]; then
+    echo "Monitor $monitor not found or not connected"
+    exit 1
+  fi
+
+  # Initialize wallpapers array
+  for i in "${!monitors[@]}"; do
+    if [ $i -eq $target_index ]; then
+      wallpapers[$i]="$wallpaper"
+    else
+      # Try to get current wallpaper or use a default
+      if [ -f ~/.fehbg ]; then
+        # Extract existing wallpaper (simplified approach)
+        local existing=$(grep -o "'[^']*'" ~/.fehbg | head -1 | sed "s/'//g")
+        wallpapers[$i]="${existing:-$wallpaper}"
+      else
+        wallpapers[$i]="$wallpaper"
+      fi
+    fi
+  done
+
+  # Set wallpapers using feh with multiple files
+  feh --bg-scale "${wallpapers[@]}"
+}
+
+# Show monitor selection menu
+select_monitor() {
+  local monitors=($(get_monitors))
+  monitors+=("all" "each")
+
+  printf '%s\n' "${monitors[@]}" | rofi -dmenu -p "Select monitor:" -config ~/.config/rofi/config-wallpaper.rasi
+}
+
+# Show wallpaper selection menu
+select_wallpaper() {
+  find "$wallpaper_folder" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) -exec basename {} \; | sort | while read rfile; do
+    echo -en "$rfile\x00icon\x1f$wallpaper_folder/${rfile}\n"
+  done | rofi -dmenu -replace -l 6 -p "Select wallpaper:" -config ~/.config/rofi/config-wallpaper.rasi
+}
+
+case "$1" in
+"select")
+  # Interactive selection mode
+  selected_monitor=$(select_monitor)
+  [ -z "$selected_monitor" ] && exit
+
+  if [ "$selected_monitor" = "each" ]; then
+    set_wallpaper_each
+  else
+    selected_wallpaper=$(select_wallpaper)
+    [ -z "$selected_wallpaper" ] && exit
+
+    if [ "$selected_monitor" = "all" ]; then
+      set_wallpaper_all "$wallpaper_folder/$selected_wallpaper"
+    else
+      set_wallpaper_monitor "$selected_monitor" "$wallpaper_folder/$selected_wallpaper"
+    fi
+  fi
+  ;;
+"random")
+  # Random wallpaper mode - asks for monitor selection
+  selected_monitor=$(select_monitor)
+  [ -z "$selected_monitor" ] && exit
+
+  if [ "$selected_monitor" = "each" ]; then
+    set_wallpaper_each
+  else
+    random_wallpaper=$(find "$wallpaper_folder" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | shuf -n 1)
+
+    if [ "$selected_monitor" = "all" ]; then
+      set_wallpaper_all "$random_wallpaper"
+    else
+      set_wallpaper_monitor "$selected_monitor" "$random_wallpaper"
+    fi
+  fi
+  ;;
+"feh")
+  # Use feh method instead of nitrogen (for backward compatibility)
+  echo "Using feh method (may not work perfectly with individual monitors)"
+  selected_monitor=$(select_monitor)
+  [ -z "$selected_monitor" ] && exit
+
+  if [ "$selected_monitor" = "each" ]; then
+    # For feh, just set different wallpapers
+    local monitors=($(get_monitors))
+    local wallpapers=()
+    for i in "${!monitors[@]}"; do
+      wallpapers+=($(find "$wallpaper_folder" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | shuf -n 1))
+    done
+    feh --bg-scale "${wallpapers[@]}"
+  else
+    selected_wallpaper=$(select_wallpaper)
+    [ -z "$selected_wallpaper" ] && exit
+
+    if [ "$selected_monitor" = "all" ]; then
+      feh --bg-scale "$wallpaper_folder/$selected_wallpaper"
+    else
+      set_wallpaper_monitor_feh "$selected_monitor" "$wallpaper_folder/$selected_wallpaper"
+    fi
+  fi
+  ;;
+"")
+  # Default: random wallpaper on all monitors
+  random_wallpaper=$(find "$wallpaper_folder" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) | shuf -n 1)
+  set_wallpaper_all "$random_wallpaper"
+  ;;
+*)
+  echo "Usage: $0 [select|random|feh]"
+  echo "  select  - Choose wallpaper and monitor interactively (uses nitrogen)"
+  echo "  random  - Set random wallpaper (choose monitor, uses nitrogen)"
+  echo "  feh     - Use feh method (less reliable for individual monitors)"
+  echo "  (empty) - Set random wallpaper on all monitors"
+  echo ""
+  echo "Note: Install nitrogen for proper multi-monitor support:"
+  echo "  Ubuntu/Debian: sudo apt install nitrogen"
+  echo "  Arch: sudo pacman -S nitrogen"
+  exit 1
+  ;;
 esac

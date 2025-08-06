@@ -45,6 +45,7 @@
   loop:
     - wallpaper.sh
     - autostart.sh
+    - lockscreen.sh
 
 - name: Qtile - Create Qtile desktop entry
   template:
